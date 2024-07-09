@@ -1,83 +1,97 @@
-// importar módulos de terceros
+// Importar módulos necesarios
 const express = require('express');
 const morgan = require('morgan');
+// const imgColor = require('img-color');
 
-// creamos una instancia del servidor Express
+// Crear una instancia del servidor Express
 const app = express();
 
-// Tenemos que usar un nuevo middleware para indicar a Express que queremos procesar peticiones de tipo POST
+// Middleware para procesar peticiones de tipo POST
 app.use(express.urlencoded({ extended: true }));
 
-// Añadimos el middleware necesario para que el client puedo hacer peticiones GET a los recursos públicos de la carpeta 'public'
+// Middleware para servir archivos estáticos desde la carpeta 'public'
 app.use(express.static('public'));
 
 // Base de datos de imágenes
 const images = [];
 
-// Especificar a Express que quiero usar EJS como motor de plantillas
+// Especificar a Express que queremos usar EJS como motor de plantillas
 app.set('view engine', 'ejs');
 
-// Usamos el middleware morgan para loguear las peticiones del cliente
+// Middleware morgan para loguear las peticiones del cliente
 app.use(morgan('tiny'));
 
-// Cuando nos hagan una petición GET a '/' renderizamos la home.ejs
+// Ruta para manejar peticiones GET a la raíz ('/')
 app.get('/', (req, res) => {
-
-    // 2. Usar en el home.ejs el forEach para iterar por todas las imágenes de la variable 'images'. Mostrar de momento solo el título 
+    // Renderizar la plantilla home.ejs y pasarle la variable 'images'
     res.render('home', {
         images
     });
 });
 
-// Cuando nos hagan una petición GET a '/add-image-form' renderizamos 
+// Ruta para manejar peticiones GET a '/add-image-form'
 app.get('/add-image-form', (req, res) => {
+    // Renderizar la plantilla form.ejs y pasarle la variable 'isImagePosted' como undefined
     res.render('form', {
         isImagePosted: undefined
     });
 });
 
-// Cuando nos hagan una petición POST a '/add-image-form' tenemos que recibir los datos del formulario y actualizar nuestra "base de datos"
+// Ruta para manejar peticiones POST a '/add-image-form'
 app.post('/add-image-form', (req, res) => {
-    // todos los datos vienen en req.body
+    // Los datos del formulario se encuentran en req.body
     console.log(req.body);
 
+    // Desestructurar los campos 'title', 'url' y 'date' de req.body
+    const { title, url, date } = req.body;
 
-    // 1. Actualizar el array 'images' con la información de req.body
-    const { title, url } = req.body;
-
-    // Validación del lado servidor de que realmente nos han enviado un títilo
-    // Esto NO ES necesario para la práctica
+    // Validación del lado servidor para comprobar que se ha enviado un título
     if (!title || title.length > 30) {
         return res.status(400).send('Algo ha salido mal...');
     }
 
-    // opción 1: totalmente válida
-    //images.push(req.body); // [{title: 'Gato'}]
-
-    // otra opción, 'sacar' los campos
+    // Añadir la nueva imagen al array 'images'
     images.push({
         title,
-        url
-    })
+        url,
+        date: new Date(date) // Convertir la fecha a un objeto Date
+    });
 
-    console.log('array de imagenes actualizado: ', images);
+    console.log('Array de imágenes actualizado: ', images);
 
-    // 3. Añadir los otros campos del formulario y sus validaciones
-
-    // 4julio: Tras insertar una imagen 'dejaremos' el formulario visible 
-    //res.send('Datos recibidos');
-    // Redirect es un método del objecto Response que permite 'redirigir' al cliente a un nuevo endpoint o vista
+    // Renderizar la plantilla form.ejs y pasarle la variable 'isImagePosted' como true
     res.render('form', {
         isImagePosted: true
     });
-
-
 });
 
+// Ruta para manejar peticiones GET a '/show-images'
+app.get('/show-images', async (req, res) => {
+    // Ordenar las imágenes por fecha de forma descendente (de más reciente a más antigua)
+    const sortedImages = images.sort((a, b) => b.date - a.date);
 
-// en el futuro es normal que tengamos endpoints como
+    // // Para cada imagen, obtener el color predominante y agregarlo al objeto de la imagen
+    // for (const image of sortedImages) {
+    //     try {
+    //         const colors = await imgColor.fromURL(image.url);
+    //         // Obtener el color predominante y su representación en hexadecimal
+    //         const predominantColor = colors[0].hex;
+    //         image.predominantColor = predominantColor;
+    //     } catch (error) {
+    //         console.error(`Error al obtener el color predominante para ${image.url}:`, error);
+    //     }
+    // }
+
+    // Renderizar la plantilla gallery.ejs y pasarle las imágenes ordenadas
+    res.render('home', {
+        images: sortedImages
+    });
+});
+
+// Endpoint adicional para futuras implementaciones
 // app.get('/edit-image-form')
 
+// Iniciar el servidor en el puerto 3000
 app.listen(3000, (req, res) => {
-    console.log("Servidor escuchando correctamente en el puerto 3000.")
+    console.log("Servidor escuchando correctamente en el puerto 3000.");
 });

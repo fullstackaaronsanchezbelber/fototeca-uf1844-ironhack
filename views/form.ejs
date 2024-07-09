@@ -2,28 +2,43 @@
 <html lang="en">
 
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Add New Image</title>
+    <!-- Incluye un archivo JavaScript llamado form.js que se cargará de forma diferida -->
     <script defer src="form.js"></script>
-
+    <!-- Incluye el contenido del archivo head.ejs que contiene la cabecera del documento (meta etiquetas, links de estilos, etc) -->
     <%- include('./partials/head') %>
-
 </head>
 
 <body>
     <header class="container">
+        <!-- Incluye el contenido del archivo nav.ejs que contiene la navegación principal del sitio -->
         <%- include('./partials/nav') %>
     </header>
+
+    <!-- Formulario para añadir una nueva imagen -->
     <form class="container" action="/add-image-form" method="post">
+        <!-- Campo para introducir el nombre de la imagen -->
         <label for="title">Nombre</label>
-        <input type="text" name="title" id="title" required>
+        <input type="text" name="title" id="title" required maxlength="30" pattern="[A-Za-z0-9_ ]+" title="Solo letras, números, espacios y guión bajo son permitidos">
+
+        <!-- Campo para introducir la URL de la imagen -->
         <label for="url">URL Imagen:</label>
-        <input type="url" name="url" id="url">
+        <input type="url" name="url" id="url" required>
+
+        <!-- Campo para introducir la fecha de la imagen -->
+        <label for="date">Fecha de la imagen:</label>
+        <input type="date" name="date" id="date" required>
+
+        <!-- Botón para enviar el formulario -->
         <input type="submit" value="Añadir">
     </form>
-    <!-- Mostrar un mensaje de confirmación si el usuario acaba de isertar una imagen en la 'base de datos'-->
+
+    <!-- Mostrar un mensaje de confirmación si el usuario acaba de insertar una imagen en la 'base de datos' -->
     <% if (isImagePosted) { %>
         <div id="message" class="container alert success">Imagen insertada correctamente</div>
-        <% } %>
+    <% } %>
 
 </body>
 

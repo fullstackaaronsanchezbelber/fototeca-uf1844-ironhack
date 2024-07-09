@@ -3,32 +3,36 @@
 
 <head>
     <title>Fototeca IronHack 2024</title>
+    <!-- Incluye el contenido del archivo head.ejs que contiene la cabecera del documento (meta etiquetas, links de estilos, etc) -->
     <%- include('./partials/head') %>
 </head>
 
 <body>
     <header class="container">
+        <!-- Incluye el contenido del archivo nav.ejs que contiene la navegación principal del sitio -->
         <%- include('./partials/nav') %>
     </header>
     <main class="container">
         <!-- Si no hay imágenes en la fototeca animamos al usuario a añadir de nuevas. En caso contrario mostraremos el número de imágenes que contiene la fototeca -->
-        <% if (images.length==0) { %>
+        <% if (images.length == 0) { %>
             <p>Todavía no hay imágenes en la fototeca. <a href="/add-image-form">Añade una ahora.</a></p>
-            <% } else { %>
+        <% } else { %>
+            <!-- Muestra el número de imágenes en la fototeca -->
+            <p>La fototeca tiene actualmente <%= images.length %> imágenes.</p>
+        <% } %>
 
-                <p>La fototeca tiene actualmente <%= images.length %> imágenes.</p>
-                <% } %>
-
-                    <section class="grid">
-                        <% for (const image of images) { %>
-                            <article>
-                               
-                                    <header><%= image.title %></header>
-                           
-                                <div><img src="<%= image.url %>" alt="<%= image.title %>"></div>
-                            </article>
-                            <% } %>
-                    </section>
+        <section class="grid">
+            <!-- Recorre cada imagen en el array images y genera un artículo para cada una -->
+            <% for (const image of images) { %>
+                <article>
+                    <!-- Muestra el título de la imagen -->
+                    <header><%= image.title.toUpperCase() %></header>
+                    <!-- Muestra la imagen utilizando la URL proporcionada -->
+                    <p>Fecha: <%= image.date.toDateString() %></p>
+                    <div><img src="<%= image.url %>" alt="<%= image.title %>"></div>
+                </article>
+            <% } %>
+        </section>
     </main>
 </body>
 

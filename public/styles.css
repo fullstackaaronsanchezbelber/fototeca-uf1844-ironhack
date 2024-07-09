@@ -11,3 +11,29 @@
     background-color: #04AA6D;
 }
 
+/* styles.css */
+
+/* Estilos para el menú horizontal */
+nav ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background-color: #f1f1f1; /* Color de fondo del menú */
+}
+
+nav ul li {
+    float: left; /* Alineación horizontal de los elementos del menú */
+}
+
+nav ul li a {
+    display: block;
+    color: black;
+    text-align: center;
+    padding: 14px 16px;
+    text-decoration: none;
+}
+
+nav ul li a:hover {
+    background-color: #ddd; /* Cambio de color al pasar el ratón por encima */
+}
