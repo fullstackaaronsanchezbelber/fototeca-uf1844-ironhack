@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Fototeca IronHack 2024</title>
+    <%- include('./partials/head') %>
+</head>
+
+<body>
+    <header class="container">
+        <%- include('./partials/nav') %>
+    </header>
+    <main class="conteiner">
+        
+        <section class="gallery">
+            <% for (const image of images) { %>
+                <div class="photo-box">
+                    <header>
+                        <%= image.title.toUpperCase() %>
+                    </header>
+                    <img src="<%= image.url_photo %>" alt="<%= image.title %>" width="100%">
+                    <br>
+                    <%= image.photo_date %>
+                    <div>El color predominante de la foto es: <br>
+                    <span class = "square" style = "background-color: <%= image.dominateColor %>" ><%= image.dominateColor %></span></div>
+                </div>
+                
+                <% } %>
+
+
+        </section>
+
+    </main>
+
+
+</body>
+
+</html>
