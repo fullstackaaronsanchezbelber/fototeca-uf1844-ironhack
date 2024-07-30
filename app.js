@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+
 // importar módulos de terceros
 const express = require('express');
 const morgan = require('morgan');
