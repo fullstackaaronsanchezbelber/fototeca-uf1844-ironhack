@@ -1,0 +1,32 @@
+[
+  {
+    "id": 5,
+    "title": "museo",
+    "url": "https://hips.hearstapps.com/hmg-prod/images/museonacional-de-arte-de-catalun-a-1630774163.jpg?resize=768:*",
+    "dominantColor": [
+      66,
+      69,
+      59
+    ]
+  },
+  {
+    "id": 5,
+    "title": "sagrada",
+    "url": "https://hips.hearstapps.com/hmg-prod/images/obras-sagrada-familia-fachada-1540462164.jpg?resize=768:*",
+    "dominantColor": [
+      67,
+      65,
+      56
+    ]
+  },
+  {
+    "id": 5,
+    "title": "pedrera",
+    "url": "https://hips.hearstapps.com/hmg-prod/images/la-pedrera-1630842850.jpg?resize=768:*",
+    "dominantColor": [
+      64,
+      83,
+      77
+    ]
+  }
+]
