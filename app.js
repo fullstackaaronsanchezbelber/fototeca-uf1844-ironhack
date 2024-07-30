@@ -1,113 +1,152 @@
-// Importar módulos necesarios
+// importar módulos de terceros
 const express = require('express');
 const morgan = require('morgan');
-const fetch = require('node-fetch');
+const fs = require('fs');
+const path = require('path');
 const { getColorFromURL } = require('color-thief-node');
 
-// Crear una instancia del servidor Express
+// creamos una instancia del servidor Express
 const app = express();
 
 // Middleware para procesar peticiones de tipo POST
 app.use(express.urlencoded({ extended: true }));
 
-// Middleware para servir archivos estáticos desde la carpeta 'public'
+// Middleware para servir recursos públicos de la carpeta 'public'
 app.use(express.static('public'));
 
-// Configuración del puerto
-const PORT = process.env.PORT || 3030;
+// Variable global para gestionar el siguiente ID de las imágenes
+let id = 5;
 
-// Base de datos de imágenes
-const images = [];
+// Puerto en el que escucha la aplicación
+const PORT = process.env.PORT || 4000;
 
-// Especificar a Express que queremos usar EJS como motor de plantillas
+// Ruta del archivo de base de datos JSON
+const dbFilePath = path.join(__dirname, 'db.json');
+
+// Base de datos de imágenes inicializada como un array vacío
+let images = [];
+
+// Leer los datos del archivo JSON si existe
+if (fs.existsSync(dbFilePath)) {
+    const data = fs.readFileSync(dbFilePath, 'utf-8');
+    images = JSON.parse(data);
+}
+
+// Especificar a Express que quiero usar EJS como motor de plantillas
 app.set('view engine', 'ejs');
 
-// Middleware morgan para loguear las peticiones del cliente
+// Usamos el middleware morgan para loguear las peticiones del cliente
 app.use(morgan('tiny'));
 
-// Ruta para manejar peticiones GET a la raíz ('/')
+// Función para guardar los datos en el archivo JSON
+function saveDataToFile() {
+    fs.writeFileSync(dbFilePath, JSON.stringify(images, null, 2), (err) => {
+        if (err) {
+            console.error('Error al guardar los datos en el archivo:', err);
+        }
+    });
+}
+
+// Petición GET a '/' para renderizar la vista home.ejs
 app.get('/', (req, res) => {
-    // Renderizar la plantilla home.ejs y pasarle la variable 'images'
-    res.render('home', { images });
-});
-
-// Endpoint para manejar la búsqueda
-app.get('/search', (req, res) => {
-    const keyword = req.query.keyword.toLowerCase();
-    const filteredImages = images.filter(image => image.keywords.includes(keyword));
-    res.render('home', { images: filteredImages });
-});
-
-// Ruta para manejar peticiones GET a '/add-image-form'
-app.get('/add-image-form', (req, res) => {
-    res.render('form', {
-        isImagePosted: undefined,
-        isImageRepeat: undefined,
+    res.render('home', {
+        images
     });
 });
 
-// Función para obtener el color dominante
-async function getDominantColor(url) {
-    const [r, g, b] = await getColorFromURL(url);
-    return `rgb(${r}, ${g}, ${b})`;
+// Función para comprobar si una cadena está contenida en otra (sin distinguir mayúsculas/minúsculas)
+function isSubstring(s1, s2) {
+    const regexp = new RegExp(s2, "i");
+    return regexp.test(s1);
 }
 
-// Ruta para manejar peticiones POST a '/add-image-form'
-app.post('/add-image-form', async (req, res) => {
-    const { title, url, date, keywords } = req.body;
+// Endpoint para gestionar la búsqueda
+app.get('/search', (req, res) => {
+    const keyword = req.query.keyword;
+    const filteredImages = images.filter((i) => isSubstring(i.title, keyword));
+    res.render('home', {
+        images: filteredImages
+    });
+});
 
-    // Validación del lado servidor
-    if (!title || title.length > 30) {
-        return res.status(400).send('Algo ha salido mal...');
-    }
+// Petición GET a '/add-image-form' para renderizar el formulario de adición de imágenes
+app.get('/add-image-form', (req, res) => {
+    res.render('form', {
+        isImagePosted: undefined,
+        imageRepeated: undefined
+    });
+});
 
-    const isUrlInArray = images.some(image => image.url === url);
-
-    if (isUrlInArray) {
-        return res.render('form', {
-            isImageRepeat: true,
-            isImagePosted: false
-        });
-    }
+// Petición POST a '/add-image-form' para añadir una nueva imagen
+app.post('/add-image-form', async (req, res, next) => {
+    let dominantColor;
+    let isRepeated;
+    const { title, url } = req.body;
 
     try {
-        // Verificar que la URL de la imagen es accesible
-        const response = await fetch(url);
-        if (!response.ok) {
-            throw new Error('Unable to fetch image');
+        console.log(req.body);
+
+        // Validación del título de la imagen
+        const regexp = /^[0-9A-Z\s_]+$/i;
+        if (title.length > 30 || !regexp.test(title)) {
+            return res.status(400).send('Algo ha salido mal...');
         }
 
-        // const dominantColor = await getDominantColor(url);
-        // images.push({
-        //     title,
-        //     url,
-        //     date: new Date(date),
-        //     dominantColor,
-        //     keywords: keywords.toLowerCase().split(',').map(k => k.trim())
-        // });
+        // Comprobar si la URL está repetida
+        isRepeated = images.some(i => i.url.toLocaleLowerCase() === url.toLocaleLowerCase());
+        if (isRepeated) {
+            return res.render('form', {
+                isImagePosted: false,
+                imageRepeated: url
+            });
+        }
 
-        // Ordenar las fotos de más nueva a más vieja
-        images.sort((a, b) => new Date(b.date) - new Date(a.date));
-
-        res.render('form', {
-            isImagePosted: true,
-            isImageRepeat: false
-        });
-    } catch (error) {
-        console.error('Error al obtener el color dominante:', error);
-        res.status(500).send('Error al procesar la imagen.');
+        // Extraer el color predominante
+        dominantColor = await getColorFromURL(url);
+    } catch (err) {
+        console.error('Ha ocurrido un error:', err);
+        if (err.message.includes('Unsupported image type')) {
+            return res.send('No hemos podido obtener el color predominante de la imagen. Por favor, prueba otra URL diferente.');
+        }
+        return next(err);
     }
 
-    console.log('Array de imágenes actualizado: ', images);
+    // Añadir la nueva imagen al array
+    images.push({
+        id: id++,
+        title,
+        url,
+        dominantColor
+    });
+
+    // Guardar los datos en el archivo JSON
+    saveDataToFile();
+
+    // Redirigir al formulario con éxito
+    res.render('form', {
+        isImagePosted: true,
+        imageRepeated: undefined
+    });
 });
 
-// Ruta para manejar peticiones GET a '/show-images'
-app.get('/show-images', (req, res) => {
-    const sortedImages = [...images].sort((a, b) => b.date - a.date);
-    res.render('home', { images: sortedImages });
+// Endpoint para borrar una imagen
+app.post('/images/:id/delete', (req, res) => {
+    const { id } = req.params;
+    images = images.filter(i => i.id !== parseInt(id));
+
+    // Guardar los datos en el archivo JSON
+    saveDataToFile();
+
+    res.redirect('/');
 });
 
-// Iniciar el servidor en el puerto configurado
+// Middleware para gestionar errores imprevistos
+app.use((err, req, res, next) => {
+    console.error(err);
+    res.status(500).send('<p>Ups! La operación ha fallado. Hemos informado a los desarrolladores. Vuelve a probarlo más tarde. Vuelve a la <a href="/">home page</a></p>');
+});
+
+// Iniciar el servidor
 app.listen(PORT, () => {
-    console.log(`Servidor escuchando correctamente en el puerto ${PORT}.`);
+    console.log("Servidor escuchando correctamente en el puerto " + PORT);
 });
